@@ -36,6 +36,7 @@
 import re
 import os
 import sys
+import argparse
 
 # for customizations scroll to very bottom of code
 
@@ -60,30 +61,32 @@ def linecount(filename):
 	return (total_lines, code_lines)
 
 def main():
-	global extensions, ignore_patterns
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-i", "--ignore", nargs='*', help="list of subfolder names to ignore")
+	parser.add_argument("project_path", help="path to folder hierarchy containing source files")
+	args= parser.parse_args()
+	
+	extensions = ['.h', '.hh', '.hpp', '.pch', '.c', '.cc', '.cpp' , '.m', '.mm', '.java', '.swift']
+	
 	grand_total = 0
 	code_total = 0
 	files_total = 0
-	path = os.getcwd()
+	path = args.project_path
 	
 	for root, dirs, files in os.walk(path, topdown=True):
+		if args.ignore:
+			for subfolder in args.ignore:
+				if subfolder in dirs:
+					dirs.remove(subfolder)
 		for filename in files:
 			if os.path.splitext(filename)[-1] in extensions:
-				valid_file = True
-				for ignore in ignore_patterns:
-					if re.search(ignore, os.path.join(root, filename)) != None:
-						valid_file = False
-						break
-				if valid_file:
-					file_results = linecount(os.path.join(root, filename))
-					grand_total += file_results[0]
-					code_total  += file_results[1]
-					files_total += 1
+				file_results = linecount(os.path.join(root, filename))
+				grand_total += file_results[0]
+				code_total  += file_results[1]
+				files_total += 1
 	print "Grand Total Lines: %6d" % grand_total
 	print " Total Code Lines: %6d" % code_total
 	print " Total Code Files: %6d" % files_total
 
 if __name__ == "__main__":
-	extensions = ['.c', '.pch', '.m', '.h', '.mm', '.cpp', '.java']
-	ignore_patterns = ['/build/']
 	main()
